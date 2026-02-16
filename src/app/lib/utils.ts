@@ -1,77 +1,191 @@
 import type { KLineData } from "klinecharts";
 
-// Function to generate random data for K-line chart
-export function generatedDataList(
-  baseTimestamp?: number,
-  basePrice?: number,
-  dataSize?: number,
-): KLineData[] {
-  const dataList: KLineData[] = [];
-  let timestamp =
-    Math.floor((baseTimestamp ?? Date.now()) / 60 / 1000) * 60 * 1000;
-  let baseValue = basePrice ?? 5000;
-  const length = dataSize ?? 800;
-  const prices = [];
+// ========== Types ==========
 
-  for (let i = 0; i < length; i++) {
-    baseValue = baseValue + Math.random() * 20 - 10;
-    for (let j = 0; j < 4; j++) {
-      prices[j] = (Math.random() - 0.5) * 12 + baseValue;
-    }
-    prices.sort();
-    const openIdx = +Math.round(Math.random() * 3).toFixed(0);
-    let closeIdx = +Math.round(Math.random() * 2).toFixed(0);
-    if (closeIdx === openIdx) {
-      closeIdx++;
-    }
-    const volume = Math.random() * 50 + 10;
-    const readableTimestamp = new Date(timestamp).toLocaleString(); // Human-readable timestamp
-    const kLineData: KLineData = {
-      open: prices[openIdx],
-      low: prices[0],
-      high: prices[3],
-      close: prices[closeIdx],
-      volume: volume,
-      timestamp,
-      readableTimestamp, // Add readable timestamp
-    };
-    timestamp -= 60 * 1000;
-    kLineData.turnover =
-      ((kLineData.open + kLineData.close + kLineData.high + kLineData.low) /
-        4) *
-      volume;
-    dataList.unshift(kLineData);
-  }
-
-  // Call function to display random icon after generating data
-  displayRandomIcon();
-
-  return dataList;
+export interface SymbolInfo {
+  symbol: string;
+  name: string;
+  pair: string;
 }
 
-// Function to display a random icon at a fixed position
-function displayRandomIcon() {
-  const icon = document.createElement("div");
-  icon.className = "fixed-icon"; // Add a unique class name
-  icon.innerHTML = "⭐"; // Example icon (you can customize this)
-  icon.style.position = "fixed";
-  icon.style.top = "20vh"; // Fixed vertical position
-  icon.style.right = "30vw"; // Fixed horizontal position
-  icon.style.fontSize = "24px"; // Adjust icon size as needed
-  icon.style.color = "#04AA6D"; // Green color
-  icon.style.zIndex = "1000"; // Ensure it's on top of other elements
-  icon.style.transition = "opacity 0.5s ease-in-out"; // Smooth fade-in effect
-  // Add click event listener
-  icon.addEventListener("click", () => {
-    window.open("https://www.google.com", "_blank"); // Open a URL in a new tab
-  });
-  document.body.appendChild(icon);
+export interface TickerData {
+  price: string;
+  priceChange: string;
+  priceChangePercent: string;
+  high: string;
+  low: string;
+  volume: string;
+  quoteVolume: string;
+}
 
-  // Set timeout to remove icon after a fixed duration (e.g., 5 seconds)
-  setTimeout(() => {
-    icon.style.opacity = "0";
-    setTimeout(() => {
-      document.body.removeChild(icon);
-    }, 500); // Wait for fade-out transition to complete
-  }, 5000); // Fixed duration of 5 seconds
+export interface OrderBookEntry {
+  price: string;
+  qty: string;
+  total: number;
+}
+
+export const SYMBOLS: SymbolInfo[] = [
+  { symbol: "BTCUSDT", name: "Bitcoin", pair: "BTC/USDT" },
+  { symbol: "ETHUSDT", name: "Ethereum", pair: "ETH/USDT" },
+  { symbol: "SOLUSDT", name: "Solana", pair: "SOL/USDT" },
+  { symbol: "BNBUSDT", name: "BNB", pair: "BNB/USDT" },
+  { symbol: "XRPUSDT", name: "XRP", pair: "XRP/USDT" },
+  { symbol: "ADAUSDT", name: "Cardano", pair: "ADA/USDT" },
+  { symbol: "DOGEUSDT", name: "Dogecoin", pair: "DOGE/USDT" },
+  { symbol: "SUIUSDT", name: "Sui", pair: "SUI/USDT" },
+];
+
+export const TIMEFRAMES = [
+  { label: "1m", value: "1m", interval: "1m" },
+  { label: "5m", value: "5m", interval: "5m" },
+  { label: "15m", value: "15m", interval: "15m" },
+  { label: "1H", value: "1h", interval: "1h" },
+  { label: "4H", value: "4h", interval: "4h" },
+  { label: "1D", value: "1d", interval: "1d" },
+  { label: "1W", value: "1w", interval: "1w" },
+];
+
+export const MAIN_INDICATORS = ["MA", "EMA", "BOLL", "SAR", "BBI"];
+export const SUB_INDICATORS = ["VOL", "MACD", "KDJ", "RSI", "ATR", "DMI", "OBV"];
+
+// ========== Binance API ==========
+
+const BINANCE_API = "https://api.binance.com/api/v3";
+
+export async function fetchKlineData(
+  symbol: string,
+  interval: string,
+  limit: number = 500,
+): Promise<KLineData[]> {
+  try {
+    const res = await fetch(
+      `${BINANCE_API}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`,
+    );
+    const data = await res.json();
+    return data.map((d: any[]) => ({
+      timestamp: d[0],
+      open: parseFloat(d[1]),
+      high: parseFloat(d[2]),
+      low: parseFloat(d[3]),
+      close: parseFloat(d[4]),
+      volume: parseFloat(d[5]),
+      turnover: parseFloat(d[7]),
+    }));
+  } catch {
+    return generateFallbackData(500);
+  }
+}
+
+export async function fetchTicker(symbol: string): Promise<TickerData | null> {
+  try {
+    const res = await fetch(`${BINANCE_API}/ticker/24hr?symbol=${symbol}`);
+    const d = await res.json();
+    return {
+      price: d.lastPrice,
+      priceChange: d.priceChange,
+      priceChangePercent: d.priceChangePercent,
+      high: d.highPrice,
+      low: d.lowPrice,
+      volume: d.volume,
+      quoteVolume: d.quoteVolume,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchOrderBook(
+  symbol: string,
+  limit: number = 15,
+): Promise<{ bids: OrderBookEntry[]; asks: OrderBookEntry[] }> {
+  try {
+    const res = await fetch(
+      `${BINANCE_API}/depth?symbol=${symbol}&limit=${limit}`,
+    );
+    const data = await res.json();
+    const mapEntries = (entries: string[][]) => {
+      let runningTotal = 0;
+      return entries.map((e) => {
+        runningTotal += parseFloat(e[1]);
+        return { price: e[0], qty: e[1], total: runningTotal };
+      });
+    };
+    return {
+      bids: mapEntries(data.bids),
+      asks: mapEntries(data.asks.reverse()),
+    };
+  } catch {
+    return { bids: [], asks: [] };
+  }
+}
+
+// ========== WebSocket ==========
+
+export function createKlineWebSocket(
+  symbol: string,
+  interval: string,
+  onMessage: (data: KLineData) => void,
+): WebSocket | null {
+  try {
+    const ws = new WebSocket(
+      `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_${interval}`,
+    );
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      const k = msg.k;
+      if (k) {
+        onMessage({
+          timestamp: k.t,
+          open: parseFloat(k.o),
+          high: parseFloat(k.h),
+          low: parseFloat(k.l),
+          close: parseFloat(k.c),
+          volume: parseFloat(k.v),
+          turnover: parseFloat(k.q),
+        });
+      }
+    };
+    return ws;
+  } catch {
+    return null;
+  }
+}
+
+// ========== Formatting ==========
+
+export function formatNumber(num: number, decimals: number = 2): string {
+  if (num >= 1e9) return (num / 1e9).toFixed(2) + "B";
+  if (num >= 1e6) return (num / 1e6).toFixed(2) + "M";
+  if (num >= 1e3) return (num / 1e3).toFixed(2) + "K";
+  return num.toFixed(decimals);
+}
+
+export function formatPrice(price: number | string): string {
+  const p = typeof price === "string" ? parseFloat(price) : price;
+  if (p >= 1000) return p.toFixed(2);
+  if (p >= 1) return p.toFixed(4);
+  return p.toFixed(6);
+}
+
+// ========== Fallback Data ==========
+
+function generateFallbackData(size: number): KLineData[] {
+  const data: KLineData[] = [];
+  let timestamp = Date.now() - size * 60 * 1000;
+  let price = 50000;
+  for (let i = 0; i < size; i++) {
+    price += (Math.random() - 0.495) * price * 0.01;
+    const high = price * (1 + Math.random() * 0.01);
+    const low = price * (1 - Math.random() * 0.01);
+    const open = low + Math.random() * (high - low);
+    const close = low + Math.random() * (high - low);
+    const volume = Math.random() * 100 + 10;
+    data.push({
+      timestamp,
+      open, high, low, close, volume,
+      turnover: ((open + close) / 2) * volume,
+    });
+    timestamp += 60 * 1000;
+  }
+  return data;
 }

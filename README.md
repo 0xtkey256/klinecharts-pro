@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# KlineCharts Pro
+
+A professional cryptocurrency trading dashboard with real-time market data, interactive charts, and technical analysis tools.
+
+**Live Demo:** [klinecharts-pro.vercel.app](https://klinecharts-pro.vercel.app)
+
+## Features
+
+- **Real-Time Charts** — Live candlestick charts powered by KlineCharts v9 with WebSocket streaming from Binance
+- **8 Trading Pairs** — BTC, ETH, SOL, BNB, XRP, ADA, DOGE, SUI (all USDT pairs)
+- **7 Timeframes** — 1m, 5m, 15m, 1H, 4H, 1D, 1W
+- **3 Chart Types** — Candlestick, OHLC, Area
+- **11 Technical Indicators** — MA, EMA, BOLL, SAR, BBI (overlay) + VOL, MACD, KDJ, RSI, ATR, DMI, OBV (sub-chart)
+- **Live Order Book** — Real-time bid/ask depth with volume visualization
+- **24h Market Data** — Price, change %, high, low, volume
+- **Watchlist** — Quick switching between trading pairs
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | [Next.js 14](https://nextjs.org) (App Router) |
+| Charts | [KlineCharts v9](https://klinecharts.com) |
+| Styling | [Tailwind CSS](https://tailwindcss.com) |
+| Data | [Binance API](https://binance-docs.github.io/apidocs/) (REST + WebSocket) |
+| Deploy | [Vercel](https://vercel.com) |
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+# Install dependencies
+npm install
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Build for production
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the dashboard.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+```
+src/app/
+  page.tsx        # Main dashboard component (chart, order book, watchlist)
+  lib/utils.ts    # Binance API integration, WebSocket, types, constants
+  layout.tsx      # Root layout with dark theme
+  globals.css     # Base styles, animations, scrollbar
+```
 
-## Learn More
+## License
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+MIT License - see [LICENSE](LICENSE) for details.
